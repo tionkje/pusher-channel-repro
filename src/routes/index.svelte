@@ -1,8 +1,11 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { PUSHER_KEY, PUSHER_CLUSTER } from '$lib/Env';
+  import { PUSHER_KEY, PUSHER_CLUSTER, ABLY_API_KEY_READONLY } from '$lib/Env';
   import Pusher from 'pusher-js';
-  let number = 0;
+  let pusherNumber = 0, ablyNumber = 0;
+
+  import Ably from 'ably';
+
   onMount(() => {
     Pusher.logToConsole = true;
 
@@ -13,14 +16,28 @@
     var channel = pusher.subscribe(`counter`);
     channel.bind('next', (data) => {
       console.log(data);
-      number = data;
+      pusherNumber = data;
+    });
+
+    var ably = new Ably.Realtime(ABLY_API_KEY_READONLY);
+    var channel = ably.channels.get('counter');
+    channel.subscribe(function(message) {
+      if(message.name == 'next'){
+        console.log(message);
+        ablyNumber = Number(message.data);
+      }
     });
   });
 
-  async function click(){
+  async function clickPusher(){
     const res = await fetch('/push');
-    number = Number(await res.text());
+    pusherNumber = Number(await res.text());
+  }
+  async function clickAbly(){
+    const res = await fetch('/ably');
+    ablyNumber = Number(await res.text());
   }
 </script>
 
-<button on:click={click}>Click me: {number}</button>
+<button on:click={clickPusher}>Pusher: {pusherNumber}</button>
+<button on:click={clickAbly}>Ably: {ablyNumber}</button>

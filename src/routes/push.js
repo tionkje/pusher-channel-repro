@@ -19,3 +19,4 @@ export async function get(){
   pusher.trigger(`counter`, 'next', newVal);
   return { body: newVal+'' }
 }
+
